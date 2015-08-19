@@ -1,0 +1,210 @@
+/**
+ * 通用弹出框 （输入信息框）
+ * @author Dean
+ * voList{list:{name:"", phone:"", address:"", mailCode:"", psText:"",psText2:""}, 
+ *          hasBG:"",title:"", paramsButton:{name:"",cb:"",cbParam:""} }
+ */ 
+var TipInputWindow = cc.Layer.extend({
+    ctor:function(voList)
+    {
+        this._super();
+        this.isOver = false;
+        this.inputBoxList = [];
+        
+        this.bgHeight = voList && voList.bgHeight ? voList.bgHeight : 340;
+        this.dataList = voList && voList.dataList ? voList.dataList : null;
+        // this.isComfiem = title != null ? true : false;
+
+        var hasBG = voList && voList.hasBG ? voList.hasBG : false;
+        this.initColorLayer(hasBG);
+        
+        this.initBackGround();
+
+        var title = voList && voList.title ? voList.title : null;
+        this.initTitle(title);
+
+        var paramsButton = voList && voList.paramsButton ? voList.paramsButton : null;
+        var list = voList ? voList.list : null;
+        this.initData(list, paramsButton);
+
+        var tempThis = this;
+        var listener = cc.EventListener.create({
+            event:cc.EventListener.TOUCH_ONE_BY_ONE,
+            swallowTouches:true,
+            onTouchBegan:function() {
+                return true;
+            },
+            onTouchEnded:function() {
+                return true;
+            }
+        });
+        cc.eventManager.addListener(listener,this);
+    },
+
+    initPlayerInfoLayer:function() 
+    {
+        this.playerBaseInfoLayer = new PlayerBaseInfoLayer();
+        this.addChild(this.playerBaseInfoLayer, 10000);
+    },
+
+    initBottomButton:function()
+    {
+        this.toolBarLayer = new ToolBarLayer(0);
+        this.addChild(this.toolBarLayer);
+    },
+
+    initColorLayer:function(hasBG)
+    {
+        if (hasBG) {
+            this.layerBg = new cc.Sprite(res.background1);
+            this.addChild(this.layerBg);
+        }
+        else {
+            this.layerBg = new cc.LayerColor(cc.color(125, 125, 125, 100));
+            this.addChild(this.layerBg);
+        }
+    },
+
+    initBackGround:function()
+    {
+        this.boxBg = Scale9SpriteFactory.winBgAngle(GC.BOX_W-10,this.bgHeight);
+        this.addChild(this.boxBg);
+        this.boxBg.setScale(0.9);
+
+        this.boxBg.x = cc.winSize.width * 0.5;
+        this.boxBg.y = cc.winSize.height * 0.5;
+
+        // action 
+        var action = cc.scaleTo(0.5, 1).easing(cc.easeElasticOut());
+        var seqDone = cc.sequence(action,cc.callFunc(function(){NoticeManager.sendNotice(NoticeName.ACTION_END);}));
+        this.boxBg.runAction(seqDone);
+    },
+
+    initTitle:function(title)
+    {
+        if (!title)
+            return ;
+
+        this.titleBg = new TitleBarBase(title,this.onRemoveThis.bind(this));
+        this.boxBg.addChild(this.titleBg);
+        this.titleBg.y = this.boxBg.h * 0.5;
+        this.titleBg.setFlip();
+    },
+
+    initData:function(list,paramsButton)
+    {
+        this.tempX = -this.boxBg.w * 0.25;
+        this.tempY = this.boxBg.h * 0.35;
+
+        for (var key in list) {
+            if (list && list[key]) {
+                if (key == "name" || key == "phone" || key == "address" || key == "mailCode")
+                    this.createDetail(list[key], key);
+                else
+                    this.createDetail(list[key]);
+            };
+        };
+        
+        if (!paramsButton)
+        {
+            var myButton = new ButtonBase(null,VoManager.getLocalizedString(1),this.onRemoveThis.bind(this));
+            myButton.setTag(10002);
+            this.boxBg.addChild(myButton);
+            myButton.y = -this.boxBg.h*0.5 + myButton.getHeight();
+            myButton.setTTFSize(24);
+        }
+        else 
+        {
+            if (paramsButton.length == 1) {
+                var params = paramsButton[0];
+                var itemName = params.name || VoManager.getLocalizedString(1);
+
+                myButton = new ButtonBase(null,itemName,this.myCallBack.bind(this),false,params);
+                this.boxBg.addChild(myButton);
+                myButton.y = -this.boxBg.h*0.5 + myButton.getHeight()*0.6;
+                myButton.setTTFSize(24);
+            }
+            else if (paramsButton.length == 2) {
+                var params = paramsButton[0];
+                var params1 = paramsButton[1];
+
+                var itemName = params.name || VoManager.getLocalizedString(1);
+                var itemName1 = params1.name || VoManager.getLocalizedString(2);
+
+                var leftButton = new ButtonBase(null,itemName,this.myCallBack.bind(this),false,params);
+                this.boxBg.addChild(leftButton);
+                leftButton.x = -this.boxBg.w*0.25;
+                leftButton.y = -this.boxBg.h*0.5 + leftButton.getHeight()*0.6;
+                leftButton.setTTFSize(24);
+
+                var rightButton = new ButtonBase(null,itemName1,this.myCallBack.bind(this),false,params1);
+                this.boxBg.addChild(rightButton);
+                rightButton.x = this.boxBg.w*0.25;
+                rightButton.y = -this.boxBg.h*0.5 + rightButton.getHeight()*0.6;
+                rightButton.setTTFSize(24);
+            }
+        }
+    },
+
+    createDetail:function(listInfo, key)
+    {
+        var myColor = '#fef84e';
+        if (key) {
+            myColor = '#ffffff';
+            var text = new LabelFonts(listInfo+":", null,1,[{color:myColor,size:20}, {color:myColor,size:22}]);
+            text.updateX(this.tempX);
+        }
+        else {
+            text = new LabelFonts(listInfo+"", null,0,[{color:myColor,size:20}, {color:myColor,size:22}]);
+            text.x = !key ? -text.getWidth()*0.5 : this.tempX;
+        }
+        this.boxBg.addChild(text);
+        text.y = this.tempY;
+
+        if (!this.dataList && key) {
+            var tempKey = new InputBoxSingle({bg:res.bg50,defaultText:"点击输入",width:500,height:35});
+            tempKey.x = -this.boxBg.w * 0.2;
+            tempKey.y = this.tempY;
+            this.boxBg.addChild(tempKey,1);
+            tempKey.name = key;
+
+            this.inputBoxList.push(tempKey);
+
+            var bg = Scale9SpriteFactory.tipWin2();
+            bg.width = 350;
+            bg.height = 40;
+            this.boxBg.addChild(bg);
+            bg.x = this.boxBg.w * 0.06;
+            bg.y = this.tempY;
+        };
+
+        if (this.dataList && key) {
+            var text2 = new LabelFonts(this.dataList[key] + "", null,0,[{color:'#ffffff',size:20}, {color:'#ffffff',size:22}]);
+            this.boxBg.addChild(text2);
+            text2.x = -this.boxBg.w * 0.2;
+            text2.y = this.tempY;
+        };
+
+        this.tempY = this.tempY - text.getHeight()*3;
+        // return text;
+    },
+
+    myCallBack:function(itemInfo)
+    {
+        if (itemInfo && itemInfo["cb"])
+        {
+            var tempList = {};
+            for (var i = 0; i < this.inputBoxList.length; i++) {
+                tempList[this.inputBoxList[i].name] = this.inputBoxList[i].getBoxString();
+            };
+            itemInfo["cb"](tempList);
+        }
+
+        this.removeFromParent(true);
+    },
+
+    onRemoveThis:function()
+    {
+        this.removeFromParent(true);
+    }
+})

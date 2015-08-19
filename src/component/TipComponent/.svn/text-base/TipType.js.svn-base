@@ -1,0 +1,24 @@
+/**
+ * Tip枚举类型
+ * @author Dean
+ */ 
+
+var TipType = TipType || {};
+
+TipType.FT_TXT = 0;         //弹出框文本内容
+TipType.FT_POWER = 'power'; //弹出框体力内容
+TipType.FT_COIN = 'coin'; //弹出框金币内容
+TipType.FT_CREDITS= 'credits'; //钻石
+TipType.FT_EXP = 'exp';//经验
+TipType.FT_LV = 'lv';
+TipType.FT_SWEPT = 'swept';
+TipType.FT_ALLOY = 'alloy'; // 合金
+TipType.FT_EXPLORE = 'explore'; // 探险
+TipType.FT_PVP = 'pvpFightNum'; // PVP
+
+
+TipType.FT_ACHIEVE = 'achieve'; // achieve
+
+TipType.WT_TXT = 1;
+
+TipType.MAX_MESSAGE = 1;

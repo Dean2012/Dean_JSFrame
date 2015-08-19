@@ -1,0 +1,8 @@
+/**
+ * Tip枚举类型
+ * @author Dean
+ */ 
+
+var TipType = TipType || {};
+
+TipType.FT_TXT = 0;         //弹出框文本内容
